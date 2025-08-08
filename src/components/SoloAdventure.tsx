@@ -237,25 +237,19 @@ export function SoloAdventure() {
           </div>
 
         {s.quests.length > 0 && s.doneIds.length === s.quests.length && (
-          <div className="card p-4">
-            <p className="font-medium">{COPY.alerts.complete[lang]}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <a
-                href="#event"
-                className="btn btn-ghost"
-                onClick={() => track("ticket_click", { source: "adventure_complete" })}
-              >
-                {lang === "es" ? "Conseguir boleto" : "Get Ticket"}
-              </a>
-              <a
-                href={WHATSAPP_GRADUATES_LINK}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-amber"
-                onClick={() => track("whatsapp_join", { source: "adventure_complete" })}
-              >
-                {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
-              </a>
+          <div className="fixed inset-0 z-50 grid place-items-center p-4">
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative card p-6 max-w-md w-full text-center">
+              <p className="font-display text-2xl mb-1">{COPY.alerts.complete[lang]}</p>
+              <p className="text-clay/70 mb-4">{lang === "es" ? "Celebra y da el siguiente paso" : "Celebrate and take the next step"}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <a href="#event" className="btn btn-ghost" onClick={() => track("ticket_click", { source: "adventure_complete_sheet" })}>
+                  {lang === "es" ? "Conseguir boleto" : "Get Ticket"}
+                </a>
+                <a href={WHATSAPP_GRADUATES_LINK} target="_blank" rel="noreferrer" className="btn btn-amber" onClick={() => track("whatsapp_join", { source: "adventure_complete_sheet" })}>
+                  {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
+                </a>
+              </div>
             </div>
           </div>
         )}
@@ -322,11 +316,17 @@ function TogglePills(props: { label: string; value: string; onChange: (v: string
 function Progress({ total, done }: { total: number; done: number }) {
   const pct = Math.round((done / Math.max(1, total)) * 100);
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
+      <div className="relative w-7 h-7">
+        <svg viewBox="0 0 36 36" className="w-7 h-7 -rotate-90">
+          <path d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" fill="none" stroke="#FEEBC8" strokeWidth="4" />
+          <path d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${pct},100`} />
+        </svg>
+        <div className="absolute inset-0 grid place-items-center text-[10px]">{done}/{total}</div>
+      </div>
       <div className="w-28 h-2 bg-amber-100 rounded-full overflow-hidden">
         <div className="h-full bg-amber-500" style={{ width: `${pct}%` }} />
       </div>
-      <span>{done}/{total}</span>
     </div>
   );
 }

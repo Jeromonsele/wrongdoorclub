@@ -25,21 +25,26 @@ export function Header() {
           <a href="#join" className={linkClass}>{COPY.nav.join[lang]}</a>
           <a href="#event" className={linkClass}>Tickets</a>
           <button
-            className="ml-2 px-3 py-2 rounded-3xl border border-black/10 bg-white hover:bg-amber-50"
+            className={clsx(
+              "ml-2 px-3 py-2 rounded-3xl border bg-white hover:bg-amber-50",
+              lang === "es" ? "border-amber-300" : "border-black/10"
+            )}
             aria-label="Language"
             onClick={() => setLang(lang === "es" ? "en" : "es")}
+            title={lang === "es" ? "Switch to English" : "Cambiar a Español"}
           >
-            {lang === "es" ? "ES" : "EN"}
+            <span className={clsx("text-xs font-medium", lang === "es" ? "text-amber-700" : "text-clay/70")}>{lang.toUpperCase()}</span>
           </button>
         </nav>
 
         <div className="md:hidden flex items-center gap-2">
           <button
             aria-label="Language"
-            className="p-2 rounded-3xl border border-black/10 bg-white"
+            className={clsx("p-2 rounded-3xl border bg-white", lang === "es" ? "border-amber-300" : "border-black/10")}
             onClick={() => setLang(lang === "es" ? "en" : "es")}
+            title={lang === "es" ? "Switch to English" : "Cambiar a Español"}
           >
-            {lang === "es" ? "ES" : "EN"}
+            <span className={clsx("text-xs font-medium", lang === "es" ? "text-amber-700" : "text-clay/70")}>{lang.toUpperCase()}</span>
           </button>
           <button
             aria-label="Open menu"

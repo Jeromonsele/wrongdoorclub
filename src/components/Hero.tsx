@@ -58,9 +58,28 @@ export function Hero() {
           </ul>
         </div>
 
-        <div aria-hidden className={THEME.hero.panel} />
+        <HeroVisual />
       </div>
     </section>
+  );
+}
+
+function HeroVisual() {
+  const [ok, setOk] = useState(true);
+  return (
+    <figure aria-hidden className="rounded-3xl shadow-soft overflow-hidden h-64 md:h-80">
+      {ok ? (
+        <img
+          src="/images/tower-portrait.jpg"
+          alt=""
+          className="w-full h-full object-cover"
+          onError={() => setOk(false)}
+          loading="lazy"
+        />
+      ) : (
+        <div className="w-full h-full rounded-3xl shadow-soft bg-[conic-gradient(at_20%_20%,#FFF3C4,#FFD08A,#FFAF70,#FFF3C4)] animate-[spin_30s_linear_infinite]" />
+      )}
+    </figure>
   );
 }
 
