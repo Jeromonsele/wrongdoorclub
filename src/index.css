@@ -3,55 +3,28 @@
 @tailwind utilities;
 
 :root { color-scheme: light; }
+
 * { -webkit-tap-highlight-color: transparent; }
 
-body { @apply bg-cream; }
-
-/* Ambient golden-hour background */
-.bg-sunset {
-  position: fixed; inset: -20vmax; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(45vmax 45vmax at 20% 15%, #FFF3C4 0%, rgba(255,243,196,0) 60%),
-    radial-gradient(50vmax 50vmax at 80% 20%, #FFD08A 0%, rgba(255,208,138,0) 55%),
-    radial-gradient(55vmax 55vmax at 40% 80%, #FFAF70 0%, rgba(255,175,112,0) 50%);
-  filter: saturate(1.05);
-  animation: sunMove 22s ease-in-out infinite alternate;
-}
-@keyframes sunMove {
-  0%   { transform: translate3d(0,0,0) scale(1); }
-  100% { transform: translate3d(0,-2vmax,0) scale(1.02); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bg-sunset { animation: none; }
+html.reduced-motion * {
+  animation: none !important;
+  transition: none !important;
 }
 
-/* Glass helpers */
-.glass-card { @apply rounded-3xl bg-white/55 backdrop-blur-md border border-white/40 shadow-[0_10px_30px_rgba(0,0,0,0.08)]; }
-.glass-card-hover { @apply transition will-change-transform hover:-translate-y-[1px] hover:bg-white/65 hover:shadow-[0_16px_40px_rgba(0,0,0,0.10)]; }
-.glass-pill { @apply rounded-full bg-white/70 backdrop-blur-sm border border-white/50; }
+body { @apply bg-cream text-clay; }
 
-/* Buttons */
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 font-medium transition will-change-transform; }
-.btn-amber { @apply text-white bg-amber-500 hover:bg-amber-600 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300; }
-.btn-ghost { @apply glass-pill active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300; }
-
-/* Card */
-.card { @apply glass-card; }
-
-/* Field + Select styling */
-.field { @apply grid gap-1 text-sm; }
-.field-label { @apply text-[#2E2A25]/70; }
-.select {
-  @apply w-full rounded-2xl glass-pill px-3 py-2 text-[#2E2A25] appearance-none bg-[image:var(--sel-icon)] bg-no-repeat bg-[center_right_0.75rem] bg-[length:16px_16px] border-none;
-  --sel-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238c7a64'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-3xl px-5 py-3 font-medium shadow-soft transition will-change-transform;
 }
-.select:focus { @apply ring-2 ring-amber-300 outline-none; }
+.btn-amber { @apply bg-amber-500 text-white hover:bg-amber-600 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400; }
+.btn-ghost { @apply bg-white/80 backdrop-blur text-clay hover:bg-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300; }
 
-.kicker { @apply text-xs tracking-wide uppercase text-[#2E2A25]/60; }
+.card { @apply rounded-3xl bg-white shadow-soft border border-black/5; }
+.link { @apply underline underline-offset-4 decoration-amber-400 hover:text-amber-700; }
+
+.kicker { @apply text-sm tracking-wide uppercase text-clay/60; }
 
 /* Vocab hint styling */
 .vocab { @apply px-1.5 py-0.5 rounded-xl bg-amber-100 text-amber-900 cursor-pointer; }
 .vocab-tooltip { @apply text-sm bg-black text-white px-2 py-1 rounded-xl shadow-lg; }
-
-html.reduced-motion * { animation: none !important; transition: none !important; }
 
