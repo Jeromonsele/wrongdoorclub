@@ -12,6 +12,7 @@ import { VocabHint } from "./VocabHint";
 import { AudioButton } from "./AudioButton";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { WHATSAPP_GRADUATES_LINK } from "@/data/social";
+import { bumpStreak, getStreak } from "@/utils/streaks";
 
 type State = {
   neighborhood: string;
@@ -102,6 +103,8 @@ export function SoloAdventure() {
       document.dispatchEvent(new CustomEvent("confetti"));
       if (allDone) {
         track("adventure_complete", { total: s.quests.length, duration: s.duration, neighborhood: s.neighborhood, vibe: s.vibe });
+        const streak = bumpStreak();
+        console.debug("streak", streak);
       }
     }
   }
