@@ -648,7 +648,7 @@ function QuestCard({
             />
           </label>
         )}
-        <button className={clsx("btn btn-amber", gpsLoading && "opacity-70 cursor-not-allowed")}
+          <button className={clsx("btn btn-amber", gpsLoading && "opacity-70 cursor-not-allowed")}
           onClick={() => void onDone(quest.id)} disabled={gpsLoading} aria-busy={gpsLoading}>
           {gpsLoading ? <Loader2 className="size-5 animate-spin" /> : <Check className="size-5" />}
           {gpsLoading ? "Validando…" : "Listo"}
