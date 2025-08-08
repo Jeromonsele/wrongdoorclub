@@ -10,6 +10,8 @@ import clsx from "clsx";
 import { useLang, t } from "@/i18n";
 import { VocabHint } from "./VocabHint";
 import { AudioButton } from "./AudioButton";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { WHATSAPP_GRADUATES_LINK } from "@/data/social";
 
 type State = {
   neighborhood: string;
@@ -51,6 +53,7 @@ function pickQuests(count: number): Quest[] {
 
 export function SoloAdventure() {
   const { lang } = useLang();
+  const { track } = useAnalytics();
   const [s, setS] = useState<State>(() => ({ ...DEFAULT, ...load<State>(KEY, DEFAULT) }));
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [locationBlocked, setLocationBlocked] = useState(false);
@@ -82,6 +85,7 @@ export function SoloAdventure() {
     const quests = pickQuests(count);
     const endTs = now() + s.duration * 60 * 1000;
     setS({ ...s, quests, idx: 0, doneIds: [], photos: {}, endTs, history: [`Start ${new Date().toLocaleTimeString()}`] });
+    track("adventure_start", { neighborhood: s.neighborhood, vibe: s.vibe, duration: s.duration, count });
   }
 
   function next() {
@@ -92,9 +96,13 @@ export function SoloAdventure() {
     if (!s.doneIds.includes(id)) {
       const doneIds = [...s.doneIds, id];
       const history = [...s.history, `Finish ${id} ${new Date().toLocaleTimeString()}`];
+      const allDone = doneIds.length >= s.quests.length && s.quests.length > 0;
       setS({ ...s, doneIds, history });
       // Confetti event via custom dispatch
       document.dispatchEvent(new CustomEvent("confetti"));
+      if (allDone) {
+        track("adventure_complete", { total: s.quests.length, duration: s.duration, neighborhood: s.neighborhood, vibe: s.vibe });
+      }
     }
   }
 
@@ -236,6 +244,30 @@ export function SoloAdventure() {
               {t(COPY.adventure.controls.download, lang)}
             </button>
           </div>
+
+        {s.quests.length > 0 && s.doneIds.length === s.quests.length && (
+          <div className="card p-4">
+            <p className="font-medium">{COPY.alerts.complete[lang]}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <a
+                href="#event"
+                className="btn btn-ghost"
+                onClick={() => track("ticket_click", { source: "adventure_complete" })}
+              >
+                {lang === "es" ? "Conseguir boleto" : "Get Ticket"}
+              </a>
+              <a
+                href={WHATSAPP_GRADUATES_LINK}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-amber"
+                onClick={() => track("whatsapp_join", { source: "adventure_complete" })}
+              >
+                {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
+              </a>
+            </div>
+          </div>
+        )}
 
           {cameraBlocked && (
             <Alert label={t(COPY.alerts.cameraBlocked, lang)} />
