@@ -11,7 +11,7 @@ import { LangProvider } from "@/i18n";
 export default function App() {
   useAnalytics();
   return (
-    <LangProvider>
+    <>
       <div className="bg-sunset" aria-hidden />
       <Confetti />
       <Header />
@@ -22,7 +22,7 @@ export default function App() {
         <AdventureCard />
       </main>
       <Footer />
-    </LangProvider>
+    </>
   );
 }
 

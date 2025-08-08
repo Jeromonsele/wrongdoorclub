@@ -14,7 +14,7 @@ export function Gallery() {
         {photos.map((p, i) => (
           <motion.figure
             key={p.src}
-            className="overflow-hidden rounded-xl2 shadow-soft border border-amber-100 bg-white"
+            className="card overflow-hidden"
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
