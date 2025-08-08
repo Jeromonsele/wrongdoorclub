@@ -25,12 +25,15 @@ type State = {
   photos: Record<string, string>; // questId -> base64
   history: string[];
   showEnglish: boolean;
+  challengeMode?: boolean;
 };
 
 type UserProfile = {
   attemptedQuests: number;
   completedQuests: number;
   xp: number;
+  byNeighborhood: Record<string, number>;
+  byType: Record<Quest["type"], number>;
 };
 
 const KEY = "wdf_adventure_state";
@@ -72,7 +75,7 @@ export function SoloAdventure() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewQuests, setPreviewQuests] = useState<Quest[]>([]);
   const [achievements, setAchievements] = useState<string[]>(() => load<string[]>("wdf_achievements", []));
-  const [profile, setProfile] = useState<UserProfile>(() => load<UserProfile>("wdf_profile", { attemptedQuests: 0, completedQuests: 0, xp: 0 }));
+  const [profile, setProfile] = useState<UserProfile>(() => load<UserProfile>("wdf_profile", { attemptedQuests: 0, completedQuests: 0, xp: 0, byNeighborhood: {}, byType: { social: 0, movement: 0, photo: 0, reflect: 0, food: 0 } }));
   const current = s.quests[s.idx];
 
   // keyboard shortcuts for accessibility: s=start, r=reroll, n=next, d=done
@@ -185,9 +188,12 @@ export function SoloAdventure() {
       const found = s.quests.find(q => q.id === id);
       if (found) {
         const gained = pointsFor(found);
-        const updated = { ...profile, completedQuests: profile.completedQuests + 1, xp: profile.xp + gained };
+        const byType = { ...profile.byType, [found.type]: (profile.byType[found.type] ?? 0) + 1 } as UserProfile["byType"];
+        const byNeighborhood = { ...profile.byNeighborhood, [s.neighborhood]: (profile.byNeighborhood[s.neighborhood] ?? 0) + 1 };
+        const updated: UserProfile = { ...profile, completedQuests: profile.completedQuests + 1, xp: profile.xp + gained, byType, byNeighborhood };
         setProfile(updated);
         save("wdf_profile", updated);
+        evaluateAchievementThresholds(updated, found);
       }
     }
   }
@@ -214,17 +220,26 @@ export function SoloAdventure() {
     }
   }
 
-  function attachPhoto(id: string, file: File) {
+  async function attachPhoto(id: string, file: File) {
     setUploadingPhotoId(id);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const preview = reader.result as string;
-      const photos = { ...s.photos, [id]: preview };
+    try {
+      const blob = await compressImage(file, 800);
+      const dataUrl = await blobToDataUrl(blob);
+      const photos = { ...s.photos, [id]: dataUrl };
       setS({ ...s, photos });
-      setUploadingPhotoId(null);
       navigator.vibrate?.(20);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      // fallback to original file as data URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        const preview = reader.result as string;
+        const photos = { ...s.photos, [id]: preview };
+        setS({ ...s, photos });
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingPhotoId(null);
+    }
   }
 
   function nearbyUrl() {
@@ -279,7 +294,8 @@ export function SoloAdventure() {
   function pickQuestsSmart(count: number, p: UserProfile): Quest[] {
     const pool = [ ...SEED_PACK.quests, ...getActivePacks().flatMap(pp => pp.quests) ];
     const rate = completionRate(p);
-    const target = rate > 0.8 ? 4 : rate < 0.5 ? 2 : 3;
+    let target = rate > 0.8 ? 4 : rate < 0.5 ? 2 : 3;
+    if (s.challengeMode) target = Math.min(5, target + 1);
     const scored = pool.map(q => ({ q, d: estimateDifficulty(q), w: 1 / (1 + Math.abs(estimateDifficulty(q) - target)) }));
     const sorted = scored
       .map(item => ({ ...item, r: Math.random() * (item.w + 0.001) }))
@@ -291,6 +307,43 @@ export function SoloAdventure() {
       if (!unique.find(u => u.id === q.id)) unique.push(q);
     }
     return unique;
+  }
+
+  async function compressImage(file: File, maxWidth: number): Promise<Blob> {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxWidth / bitmap.width);
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx?.drawImage(bitmap, 0, 0, w, h);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/webp', 0.85);
+    });
+  }
+
+  function blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  function evaluateAchievementThresholds(p: UserProfile, q: Quest) {
+    // Neighborhood Master: 10 in same neighborhood
+    if ((p.byNeighborhood[s.neighborhood] ?? 0) >= 10) addAchievement(`master_${s.neighborhood}`);
+    // Photo Hunter: 10 photo quests
+    if ((p.byType.photo ?? 0) >= 10) addAchievement('photo_hunter');
+    // Weekly streak reward
+    const wk = getStreak().current;
+    if (wk >= 1) addAchievement('streak_weekly');
+    if (wk >= 4) addAchievement('streak_monthly');
+    if (wk >= 100) addAchievement('streak_legendary');
+    // Secret hooks: placeholder for future hidden triggers
   }
 
   return (
@@ -324,6 +377,14 @@ export function SoloAdventure() {
         </button>
         <button className="btn btn-ghost" type="button" onClick={openPreview}>
           {lang === 'es' ? 'Vista previa' : 'Preview'}
+        </button>
+        <button
+          className={clsx("btn", s.challengeMode ? "btn-amber" : "btn-ghost")}
+          type="button"
+          onClick={() => setS({ ...s, challengeMode: !s.challengeMode })}
+          aria-pressed={!!s.challengeMode}
+        >
+          {lang === 'es' ? 'Modo desafío' : 'Challenge mode'}
         </button>
         <a href={nearbyUrl()} target="_blank" rel="noreferrer" className="btn btn-ghost">
           <MapPin className="size-5" />
@@ -683,7 +744,11 @@ function AchievementsBar({ ids, lang }: { ids: string[]; lang: 'es' | 'en' }) {
   if (!ids.length) return null;
   const labels: Record<string, { es: string; en: string }> = {
     first_quest: { es: 'Primera misión', en: 'First quest' },
-    adventure_complete: { es: 'Aventura completa', en: 'Adventure complete' }
+    adventure_complete: { es: 'Aventura completa', en: 'Adventure complete' },
+    photo_hunter: { es: 'Cazador de fotos', en: 'Photo hunter' },
+    streak_weekly: { es: 'Racha semanal', en: 'Weekly streak' },
+    streak_monthly: { es: 'Racha mensual', en: 'Monthly streak' },
+    streak_legendary: { es: 'Racha legendaria (100)', en: 'Legendary streak (100)' }
   };
   return (
     <ul className="flex flex-wrap gap-1" aria-label={lang === 'es' ? 'Logros' : 'Achievements'}>
