@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useLang } from "@/i18n";
 import { EXPANSION_PACKS } from "@/data/quests";
 import { load, save } from "@/utils/storage";
+import { GlassCard } from "./ui/Glass";
 
 export function AdventureCard() {
   const [packsOpen, setPacksOpen] = useState(false);
@@ -16,14 +17,14 @@ export function AdventureCard() {
   return (
     <section id="adventure" className={`${THEME.layout.padX} py-12 md:py-16`}>
       <div className={`${THEME.layout.maxW} mx-auto grid lg:grid-cols-[2fr,1fr] gap-6 items-start`}>
-        <div className="card p-5">
+        <GlassCard className="p-5">
           <h2 className="font-display text-2xl mb-2">{COPY.adventure.title[lang]}</h2>
           <SoloAdventure />
-        </div>
+        </GlassCard>
 
         <div className="flex flex-col gap-4">
           <button
-            className="card p-4 text-left flex items-center justify-between"
+            className="card glass-card-hover p-4 text-left flex items-center justify-between"
             onClick={() => setPacksOpen(v => !v)}
             aria-expanded={packsOpen}
             aria-controls="packs"
@@ -36,12 +37,12 @@ export function AdventureCard() {
           </button>
 
           {packsOpen && (
-            <div id="packs" className="card p-4">
+            <div id="packs" className="card glass-card-hover p-4">
               <PackToggles />
             </div>
           )}
 
-          <a href={featuredSponsor.url} className="card p-4 hover:shadow-lg transition" target="_blank" rel="noreferrer">
+          <a href={featuredSponsor.url} className="card glass-card-hover p-4 hover:shadow-lg transition" target="_blank" rel="noreferrer">
             <div className="flex items-center gap-2 mb-1">
               <Star className="size-4 text-amber-600" />
               <div className="text-sm text-clay/70">{COPY.adventure.sponsor.label[lang]}</div>

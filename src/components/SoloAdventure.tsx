@@ -159,24 +159,36 @@ export function SoloAdventure() {
   return (
     <div className="grid gap-4">
       <div className="grid sm:grid-cols-3 gap-3">
-        <Select
-          label={t(COPY.adventure.controls.neighborhood, lang)}
-          value={s.neighborhood}
-          onChange={v => setS({ ...s, neighborhood: v })}
-          options={NEIGHBORHOODS as unknown as string[]}
-        />
-        <Select
-          label={t(COPY.adventure.controls.vibe, lang)}
-          value={s.vibe}
-          onChange={v => setS({ ...s, vibe: v })}
-          options={VIBES as unknown as string[]}
-        />
-        <Select
-          label={t(COPY.adventure.controls.duration, lang)}
-          value={String(s.duration)}
-          onChange={v => setS({ ...s, duration: Number(v) })}
-          options={["30", "45", "60", "90"]}
-        />
+        <label className="field">
+          <span className="field-label">{t(COPY.adventure.controls.neighborhood, lang)}</span>
+          <select
+            className="select"
+            value={s.neighborhood}
+            onChange={(e) => setS({ ...s, neighborhood: e.target.value })}
+          >
+            {(NEIGHBORHOODS as unknown as string[]).map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">{t(COPY.adventure.controls.vibe, lang)}</span>
+          <select
+            className="select"
+            value={s.vibe}
+            onChange={(e) => setS({ ...s, vibe: e.target.value })}
+          >
+            {(VIBES as unknown as string[]).map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </label>
+        <label className="field">
+          <span className="field-label">{t(COPY.adventure.controls.duration, lang)}</span>
+          <select
+            className="select"
+            value={String(s.duration)}
+            onChange={(e) => setS({ ...s, duration: Number(e.target.value) })}
+          >
+            {["30","45","60","90"].map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </label>
       </div>
 
       <div className="flex gap-2">

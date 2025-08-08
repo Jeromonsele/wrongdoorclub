@@ -12,6 +12,7 @@ export default function App() {
   useAnalytics();
   return (
     <LangProvider>
+      <div className="bg-sunset" aria-hidden />
       <Confetti />
       <Header />
       <main>
