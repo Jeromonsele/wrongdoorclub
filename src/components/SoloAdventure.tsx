@@ -27,6 +27,12 @@ type State = {
   showEnglish: boolean;
 };
 
+type UserProfile = {
+  attemptedQuests: number;
+  completedQuests: number;
+  xp: number;
+};
+
 const KEY = "wdf_adventure_state";
 const DEFAULT: State = {
   neighborhood: "Roma",
@@ -66,6 +72,7 @@ export function SoloAdventure() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewQuests, setPreviewQuests] = useState<Quest[]>([]);
   const [achievements, setAchievements] = useState<string[]>(() => load<string[]>("wdf_achievements", []));
+  const [profile, setProfile] = useState<UserProfile>(() => load<UserProfile>("wdf_profile", { attemptedQuests: 0, completedQuests: 0, xp: 0 }));
   const current = s.quests[s.idx];
 
   // keyboard shortcuts for accessibility: s=start, r=reroll, n=next, d=done
@@ -120,16 +127,20 @@ export function SoloAdventure() {
   }, []);
 
   const remaining = useMemo(() => (s.endTs ? wallClockCountdown(s.endTs) : { ms: 0, label: "00:00" }), [tick, s.endTs]);
+  const level = useMemo(() => 1 + Math.floor(profile.xp / 100), [profile.xp]);
 
   function generate() {
     setIsGenerating(true);
     // brief delay for perceived responsiveness and to display skeleton
     setTimeout(() => {
       const count = Math.min(5, Math.max(3, Math.round(s.duration / 20)));
-      const quests = pickQuests(count);
+      const quests = pickQuestsSmart(count, profile);
       const endTs = now() + s.duration * 60 * 1000;
       setS({ ...s, quests, idx: 0, doneIds: [], photos: {}, endTs, history: [`Start ${new Date().toLocaleTimeString()}`] });
       track("adventure_start", { neighborhood: s.neighborhood, vibe: s.vibe, duration: s.duration, count });
+      const updated = { ...profile, attemptedQuests: profile.attemptedQuests + quests.length };
+      setProfile(updated);
+      save("wdf_profile", updated);
       setIsGenerating(false);
       navigator.vibrate?.(20);
       setPreviewOpen(false);
@@ -137,7 +148,7 @@ export function SoloAdventure() {
   }
 
   function openPreview() {
-    const sample = pickQuests(3);
+    const sample = pickQuestsSmart(3, profile);
     setPreviewQuests(sample);
     setPreviewOpen(true);
   }
@@ -170,12 +181,20 @@ export function SoloAdventure() {
         addAchievement('adventure_complete');
       }
       navigator.vibrate?.(30);
+      // XP award
+      const found = s.quests.find(q => q.id === id);
+      if (found) {
+        const gained = pointsFor(found);
+        const updated = { ...profile, completedQuests: profile.completedQuests + 1, xp: profile.xp + gained };
+        setProfile(updated);
+        save("wdf_profile", updated);
+      }
     }
   }
 
   function reroll() {
     if (!current) return;
-    const replacements = pickQuests(1);
+    const replacements = pickQuestsSmart(1, profile);
     const next = s.quests.slice();
     next[s.idx] = replacements[0];
     setS({ ...s, quests: next });
@@ -235,6 +254,45 @@ export function SoloAdventure() {
     URL.revokeObjectURL(a.href);
   }
 
+  // Adaptive difficulty & points helpers
+  function estimateDifficulty(q: Quest): 1 | 2 | 3 | 4 | 5 {
+    let score = 1;
+    if (q.type === "social") score = 3;
+    if (q.type === "movement") score = 2;
+    if (q.type === "photo") score = 2;
+    if (q.type === "reflect") score = 2;
+    if (q.type === "food") score = 1;
+    if (q.gps) score += 1;
+    if (q.photo) score += 1;
+    return Math.max(1, Math.min(5, score as number)) as 1 | 2 | 3 | 4 | 5;
+  }
+
+  function pointsFor(q: Quest): number {
+    return estimateDifficulty(q) * 10;
+  }
+
+  function completionRate(p: UserProfile): number {
+    const att = Math.max(1, p.attemptedQuests);
+    return p.completedQuests / att;
+  }
+
+  function pickQuestsSmart(count: number, p: UserProfile): Quest[] {
+    const pool = [ ...SEED_PACK.quests, ...getActivePacks().flatMap(pp => pp.quests) ];
+    const rate = completionRate(p);
+    const target = rate > 0.8 ? 4 : rate < 0.5 ? 2 : 3;
+    const scored = pool.map(q => ({ q, d: estimateDifficulty(q), w: 1 / (1 + Math.abs(estimateDifficulty(q) - target)) }));
+    const sorted = scored
+      .map(item => ({ ...item, r: Math.random() * (item.w + 0.001) }))
+      .sort((a, b) => b.r - a.r)
+      .map(s => s.q);
+    const unique: Quest[] = [];
+    for (const q of sorted) {
+      if (unique.length >= count) break;
+      if (!unique.find(u => u.id === q.id)) unique.push(q);
+    }
+    return unique;
+  }
+
   return (
     <div className="grid gap-4">
       <div className="grid sm:grid-cols-3 gap-3">
@@ -288,6 +346,9 @@ export function SoloAdventure() {
             </div>
             <div className="flex items-center gap-3">
               <Progress total={s.quests.length} done={s.doneIds.length} />
+            <div className="px-2 py-1 rounded-3xl border border-amber-100 bg-white/80 text-clay text-xs" aria-label={lang === 'es' ? 'Nivel y experiencia' : 'Level and experience'}>
+              {lang === 'es' ? 'Nivel' : 'Lvl'} {level} · {profile.xp} XP
+            </div>
               <AchievementsBar ids={achievements} lang={lang} />
             </div>
           </div>
@@ -304,6 +365,7 @@ export function SoloAdventure() {
             photos={s.photos}
             gpsLoading={gpsLoading}
             uploadingPhotoId={uploadingPhotoId}
+            getPoints={pointsFor}
           />
 
           <div className="flex flex-wrap gap-2">
@@ -457,7 +519,8 @@ function QuestCard({
   onAttach,
   photos,
   gpsLoading,
-  uploadingPhotoId
+  uploadingPhotoId,
+  getPoints
 }: {
   quest?: Quest;
   showEnglish: boolean;
@@ -470,6 +533,7 @@ function QuestCard({
   photos: Record<string, string>;
   gpsLoading: boolean;
   uploadingPhotoId: string | null;
+  getPoints: (q: Quest) => number;
 }) {
   if (!quest) return null;
   const photoData = photos[quest.id];
@@ -488,7 +552,12 @@ function QuestCard({
       </div>
 
       <div className="space-y-2">
-        {renderTextWithVocab(quest.text.es, quest.vocab)}
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-2">{renderTextWithVocab(quest.text.es, quest.vocab)}</span>
+          <span className="ml-auto text-xs px-2 py-0.5 rounded-3xl border border-amber-200 bg-amber-50 text-amber-900" aria-label="Points">
+            +{getPoints(quest)} XP
+          </span>
+        </div>
         {showEnglish && <p className="text-clay/70">{quest.text.en}</p>}
       </div>
 
