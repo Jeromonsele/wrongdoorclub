@@ -21,6 +21,6 @@ export const THEME = {
 
 export const FEATURE_FLAGS = {
   membershipTeaser: true,
-  analytics: false
+  analytics: true
 };
 
