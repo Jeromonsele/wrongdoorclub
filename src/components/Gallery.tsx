@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 
 export function Gallery() {
   const photos = [
-    { src: "/images/city-bridge.jpg", alt: "Sunlit domed building by a bridge with cyclist in motion" },
-    { src: "/images/crosswalk-sun.jpg", alt: "City crosswalk at golden hour with long shadows" },
-    { src: "/images/cyclist-truck.jpg", alt: "Cyclist passing a parked truck in afternoon light" }
+    { src: "/images/city-bridge.jpg", webp: "/images/city-bridge.webp", alt: "Sunlit domed building by a bridge with cyclist in motion" },
+    { src: "/images/crosswalk-sun.jpg", webp: "/images/crosswalk-sun.webp", alt: "City crosswalk at golden hour with long shadows" },
+    { src: "/images/cyclist-truck.jpg", webp: "/images/cyclist-truck.webp", alt: "Cyclist passing a parked truck in afternoon light" }
   ];
 
   return (
@@ -20,7 +20,10 @@ export function Gallery() {
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.25, delay: i * 0.05 }}
           >
-            <img src={p.src} alt={p.alt} loading="lazy" className="w-full h-56 md:h-64 object-cover" />
+            <picture>
+              <source srcSet={p.webp} type="image/webp" />
+              <img src={p.src} alt={p.alt} loading="lazy" className="w-full h-56 md:h-64 object-cover" />
+            </picture>
           </motion.figure>
         ))}
       </div>

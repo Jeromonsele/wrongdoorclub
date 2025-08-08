@@ -19,7 +19,7 @@ export function Header() {
           <span>{COPY.siteName[lang]}</span>
         </a>
 
-        <nav className="hidden md:flex items-center gap-2">
+        <nav className="hidden md:flex items-center gap-2" role="navigation" aria-label="Primary">
           <a href="#about" className={linkClass}>{COPY.nav.about[lang]}</a>
           <a href="#adventure" className={linkClass}>{COPY.nav.adventure[lang]}</a>
           <a href="#join" className={linkClass}>{COPY.nav.join[lang]}</a>
@@ -50,6 +50,8 @@ export function Header() {
             aria-label="Open menu"
             className="p-2 rounded-3xl hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
             onClick={() => setOpen(v => !v)}
+            aria-expanded={open}
+            aria-controls="mobile-nav"
           >
             <Menu className="size-6" />
           </button>
@@ -57,8 +59,8 @@ export function Header() {
       </div>
 
       {open && (
-        <div className={clsx(THEME.layout.padX, "md:hidden")}>
-          <div className={clsx("mx-auto", THEME.layout.maxW, "pb-3 flex flex-col gap-2")}> 
+        <div className={clsx(THEME.layout.padX, "md:hidden")}> 
+          <div id="mobile-nav" role="navigation" aria-label="Mobile Primary" className={clsx("mx-auto", THEME.layout.maxW, "pb-3 flex flex-col gap-2")}> 
             <a href="#about" className={linkClass} onClick={() => setOpen(false)}>{COPY.nav.about[lang]}</a>
             <a href="#adventure" className={linkClass} onClick={() => setOpen(false)}>{COPY.nav.adventure[lang]}</a>
             <a href="#join" className={linkClass} onClick={() => setOpen(false)}>{COPY.nav.join[lang]}</a>

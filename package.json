@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "analyze": "vite build && (open ./stats.html || xdg-open ./stats.html || echo 'stats at ./stats.html')",
+    "audit:axe": "node scripts/run-axe.cjs",
+    "audit:lighthouse": "node scripts/run-lh.cjs",
+    "audit:all": "start-server-and-test dev http://localhost:5173 \"pnpm audit:axe && pnpm audit:lighthouse\"",
+    "postinstall": "playwright install chromium"
   },
   "dependencies": {
     "clsx": "2.1.1",
@@ -23,7 +28,13 @@
     "@types/react-dom": "18.3.0",
     "@vitejs/plugin-react": "4.3.1",
     "autoprefixer": "10.4.20",
+    "axe-core": "^4.10.3",
+    "chrome-launcher": "^1.2.0",
+    "lighthouse": "^12.8.1",
+    "playwright": "^1.54.2",
     "postcss": "8.4.41",
+    "rollup-plugin-visualizer": "^6.0.3",
+    "start-server-and-test": "^2.0.13",
     "tailwindcss": "3.4.10",
     "typescript": "5.5.4",
     "vite": "5.4.2"

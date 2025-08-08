@@ -1,11 +1,11 @@
 // src/components/SoloAdventure.tsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { VENUES, NEIGHBORHOODS, VIBES } from "@/data/venues";
 import { EXPANSION_PACKS, SEED_PACK, Quest } from "@/data/quests";
 import { load, save } from "@/utils/storage";
 import { wallClockCountdown, now } from "@/utils/timers";
 import { COPY } from "@/copy";
-import { Compass, Clock, RefreshCw, Check, Image as ImageIcon, MapPin, Download, ChevronRight, ChevronDown } from "lucide-react";
+import { Compass, Clock, RefreshCw, Check, Image as ImageIcon, MapPin, Download, ChevronRight, ChevronDown, Loader2 } from "lucide-react";
 import clsx from "clsx";
 import { useLang, t } from "@/i18n";
 import { VocabHint } from "./VocabHint";
@@ -59,10 +59,51 @@ export function SoloAdventure() {
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [locationBlocked, setLocationBlocked] = useState(false);
   const [tick, setTick] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewQuests, setPreviewQuests] = useState<Quest[]>([]);
+  const [achievements, setAchievements] = useState<string[]>(() => load<string[]>("wdf_achievements", []));
+  const current = s.quests[s.idx];
 
-  // Persist
+  // keyboard shortcuts for accessibility: s=start, r=reroll, n=next, d=done
   useEffect(() => {
-    save(KEY, s);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.metaKey || e.ctrlKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || (target as any).isContentEditable)) {
+        return;
+      }
+      const key = e.key.toLowerCase();
+      if (key === 's') {
+        e.preventDefault();
+        if (!isGenerating) generate();
+      } else if (key === 'r' && current) {
+        e.preventDefault();
+        reroll();
+      } else if (key === 'n' && current) {
+        e.preventDefault();
+        next();
+      } else if (key === 'd' && current) {
+        e.preventDefault();
+        (async () => { setGpsLoading(true); const ok = await checkGPS(current); setGpsLoading(false); if (ok) markDone(current.id); })();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [current, isGenerating, s]);
+
+  // Persist (debounced)
+  useEffect(() => {
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      save(KEY, s);
+    }, 300);
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
   }, [s]);
 
   // Timer tick
@@ -79,18 +120,38 @@ export function SoloAdventure() {
   }, []);
 
   const remaining = useMemo(() => (s.endTs ? wallClockCountdown(s.endTs) : { ms: 0, label: "00:00" }), [tick, s.endTs]);
-  const current = s.quests[s.idx];
 
   function generate() {
-    const count = Math.min(5, Math.max(3, Math.round(s.duration / 20)));
-    const quests = pickQuests(count);
-    const endTs = now() + s.duration * 60 * 1000;
-    setS({ ...s, quests, idx: 0, doneIds: [], photos: {}, endTs, history: [`Start ${new Date().toLocaleTimeString()}`] });
-    track("adventure_start", { neighborhood: s.neighborhood, vibe: s.vibe, duration: s.duration, count });
+    setIsGenerating(true);
+    // brief delay for perceived responsiveness and to display skeleton
+    setTimeout(() => {
+      const count = Math.min(5, Math.max(3, Math.round(s.duration / 20)));
+      const quests = pickQuests(count);
+      const endTs = now() + s.duration * 60 * 1000;
+      setS({ ...s, quests, idx: 0, doneIds: [], photos: {}, endTs, history: [`Start ${new Date().toLocaleTimeString()}`] });
+      track("adventure_start", { neighborhood: s.neighborhood, vibe: s.vibe, duration: s.duration, count });
+      setIsGenerating(false);
+      navigator.vibrate?.(20);
+      setPreviewOpen(false);
+    }, 350);
+  }
+
+  function openPreview() {
+    const sample = pickQuests(3);
+    setPreviewQuests(sample);
+    setPreviewOpen(true);
+  }
+
+  function addAchievement(id: string) {
+    if (achievements.includes(id)) return;
+    const next = [...achievements, id];
+    setAchievements(next);
+    save("wdf_achievements", next);
   }
 
   function next() {
     if (s.idx < s.quests.length - 1) setS({ ...s, idx: s.idx + 1 });
+    navigator.vibrate?.(10);
   }
 
   function markDone(id: string) {
@@ -101,11 +162,14 @@ export function SoloAdventure() {
       setS({ ...s, doneIds, history });
       // Confetti event via custom dispatch
       document.dispatchEvent(new CustomEvent("confetti"));
+      if (doneIds.length === 1) addAchievement('first_quest');
       if (allDone) {
         track("adventure_complete", { total: s.quests.length, duration: s.duration, neighborhood: s.neighborhood, vibe: s.vibe });
         const streak = bumpStreak();
         console.debug("streak", streak);
+        addAchievement('adventure_complete');
       }
+      navigator.vibrate?.(30);
     }
   }
 
@@ -115,6 +179,7 @@ export function SoloAdventure() {
     const next = s.quests.slice();
     next[s.idx] = replacements[0];
     setS({ ...s, quests: next });
+    navigator.vibrate?.(10);
   }
 
   async function checkGPS(q?: Quest) {
@@ -131,11 +196,14 @@ export function SoloAdventure() {
   }
 
   function attachPhoto(id: string, file: File) {
+    setUploadingPhotoId(id);
     const reader = new FileReader();
     reader.onload = () => {
       const preview = reader.result as string;
       const photos = { ...s.photos, [id]: preview };
       setS({ ...s, photos });
+      setUploadingPhotoId(null);
+      navigator.vibrate?.(20);
     };
     reader.readAsDataURL(file);
   }
@@ -191,9 +259,13 @@ export function SoloAdventure() {
       </div>
 
       <div className="flex gap-2">
-        <button className="btn btn-amber" onClick={generate}>
-          <Compass className="size-5" />
-          {t(COPY.adventure.controls.start, lang)}
+        <button className={clsx("btn btn-amber", isGenerating && "opacity-70 cursor-not-allowed")}
+          onClick={generate} disabled={isGenerating} aria-busy={isGenerating}>
+          {isGenerating ? <Loader2 className="size-5 animate-spin" /> : <Compass className="size-5" />}
+          {isGenerating ? (lang === "es" ? "Generando…" : "Generating…") : t(COPY.adventure.controls.start, lang)}
+        </button>
+        <button className="btn btn-ghost" type="button" onClick={openPreview}>
+          {lang === 'es' ? 'Vista previa' : 'Preview'}
         </button>
         <a href={nearbyUrl()} target="_blank" rel="noreferrer" className="btn btn-ghost">
           <MapPin className="size-5" />
@@ -210,11 +282,14 @@ export function SoloAdventure() {
       {s.quests.length > 0 && (
         <div className="grid gap-3">
           <div className="flex items-center justify-between text-sm text-clay/70">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" role="timer" aria-live="polite" aria-atomic="true" aria-label="Time remaining">
               <Clock className="size-4" />
-              <span aria-live="polite">{remaining.label}</span>
+              <span aria-live="polite" className={remaining.ms < 15000 ? "text-red-600" : remaining.ms < 60000 ? "text-amber-600" : undefined}>{remaining.label}</span>
             </div>
-            <Progress total={s.quests.length} done={s.doneIds.length} />
+            <div className="flex items-center gap-3">
+              <Progress total={s.quests.length} done={s.doneIds.length} />
+              <AchievementsBar ids={achievements} lang={lang} />
+            </div>
           </div>
 
           <QuestCard
@@ -223,10 +298,12 @@ export function SoloAdventure() {
             nextLabel={s.quests[s.idx + 1]?.text.es}
             onAttach={(id, f) => attachPhoto(id, f)}
             onReroll={reroll}
-            onDone={async (id) => { const ok = await checkGPS(current); if (ok) markDone(id); }}
+            onDone={async (id) => { setGpsLoading(true); const ok = await checkGPS(current); setGpsLoading(false); if (ok) markDone(id); }}
             onNext={next}
             isLast={s.idx === s.quests.length - 1}
             photos={s.photos}
+            gpsLoading={gpsLoading}
+            uploadingPhotoId={uploadingPhotoId}
           />
 
           <div className="flex flex-wrap gap-2">
@@ -237,28 +314,12 @@ export function SoloAdventure() {
           </div>
 
         {s.quests.length > 0 && s.doneIds.length === s.quests.length && (
-          <div className="fixed inset-0 z-50 grid place-items-center p-4">
-            <div className="absolute inset-0 bg-black/40" />
-            <div className="relative card p-6 max-w-md w-full text-center">
-              <p className="font-display text-2xl mb-1">{COPY.alerts.complete[lang]}</p>
-              <p className="text-clay/70 mb-4">
-                {lang === "es"
-                  ? "Tu siguiente paso - únete a quienes lo hicieron esta semana"
-                  : "Your next step - join others who did this this week"}
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                <a href="#event" className="btn btn-ghost" onClick={() => track("ticket_click", { source: "adventure_complete_sheet" })}>
-                  {lang === "es" ? "Conseguir boleto" : "Get Ticket"}
-                </a>
-                <a href={WHATSAPP_GRADUATES_LINK} target="_blank" rel="noreferrer" className="btn btn-amber" onClick={() => track("whatsapp_join", { source: "adventure_complete_sheet" })}>
-                  {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
-                </a>
-                <button className="btn btn-ghost" onClick={downloadBadge}>
-                  {t(COPY.adventure.controls.download, lang)}
-                </button>
-              </div>
-            </div>
-          </div>
+          <CompletionDialog
+            lang={lang}
+            onTicket={() => track("ticket_click", { source: "adventure_complete_sheet" })}
+            onWhatsapp={() => track("whatsapp_join", { source: "adventure_complete_sheet" })}
+            onDownload={downloadBadge}
+          />
         )}
 
           {cameraBlocked && (
@@ -268,6 +329,31 @@ export function SoloAdventure() {
             <Alert label={t(COPY.alerts.locationBlocked, lang)} />
           )}
         </div>
+      )}
+
+      {isGenerating && (
+        <div className="card p-5 animate-pulse">
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-3 w-24 bg-black/10 rounded" />
+            <div className="h-8 w-28 bg-black/10 rounded-3xl" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-5 w-3/4 bg-black/10 rounded" />
+            <div className="h-5 w-2/3 bg-black/10 rounded" />
+            <div className="h-5 w-1/2 bg-black/10 rounded" />
+          </div>
+          <div className="mt-4 h-10 w-40 bg-black/10 rounded-3xl" />
+        </div>
+      )}
+
+      {previewOpen && (
+        <PreviewDialog
+          lang={lang}
+          quests={previewQuests}
+          showEnglish={s.showEnglish}
+          onStart={generate}
+          onClose={() => setPreviewOpen(false)}
+        />
       )}
     </div>
   );
@@ -323,13 +409,13 @@ function TogglePills(props: { label: string; value: string; onChange: (v: string
 function Progress({ total, done }: { total: number; done: number }) {
   const pct = Math.round((done / Math.max(1, total)) * 100);
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3" role="group" aria-label="Progress">
       <div className="relative w-7 h-7">
         <svg viewBox="0 0 36 36" className="w-7 h-7 -rotate-90">
           <path d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" fill="none" stroke="#FEEBC8" strokeWidth="4" />
           <path d="M18 2 a 16 16 0 1 1 0 32 a 16 16 0 1 1 0 -32" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${pct},100`} />
         </svg>
-        <div className="absolute inset-0 grid place-items-center text-[10px]">{done}/{total}</div>
+        <div className="absolute inset-0 grid place-items-center text-[10px]" aria-live="polite" aria-atomic="true" aria-label={`Completed ${done} of ${total}`}>{done}/{total}</div>
       </div>
       <div className="w-28 h-2 bg-amber-100 rounded-full overflow-hidden">
         <div className="h-full bg-amber-500" style={{ width: `${pct}%` }} />
@@ -369,7 +455,9 @@ function QuestCard({
   onNext,
   onDone,
   onAttach,
-  photos
+  photos,
+  gpsLoading,
+  uploadingPhotoId
 }: {
   quest?: Quest;
   showEnglish: boolean;
@@ -380,6 +468,8 @@ function QuestCard({
   onDone: (id: string) => void | Promise<void>;
   onAttach: (id: string, f: File) => void;
   photos: Record<string, string>;
+  gpsLoading: boolean;
+  uploadingPhotoId: string | null;
 }) {
   if (!quest) return null;
   const photoData = photos[quest.id];
@@ -411,9 +501,10 @@ function QuestCard({
 
       <div className="mt-3 flex flex-wrap gap-2">
         {quest.photo && (
-          <label className="btn btn-ghost cursor-pointer">
-            <ImageIcon className="size-5" />
-            Adjuntar foto
+          <label className={clsx("btn btn-ghost cursor-pointer", uploadingPhotoId === quest.id && "opacity-70 cursor-progress")}
+            aria-busy={uploadingPhotoId === quest.id}>
+            {uploadingPhotoId === quest.id ? <Loader2 className="size-5 animate-spin" /> : <ImageIcon className="size-5" />}
+            {uploadingPhotoId === quest.id ? "Adjuntando…" : "Adjuntar foto"}
             <input
               type="file"
               accept="image/*"
@@ -427,9 +518,10 @@ function QuestCard({
             />
           </label>
         )}
-        <button className="btn btn-amber" onClick={() => void onDone(quest.id)}>
-          <Check className="size-5" />
-          Listo
+        <button className={clsx("btn btn-amber", gpsLoading && "opacity-70 cursor-not-allowed")}
+          onClick={() => void onDone(quest.id)} disabled={gpsLoading} aria-busy={gpsLoading}>
+          {gpsLoading ? <Loader2 className="size-5 animate-spin" /> : <Check className="size-5" />}
+          {gpsLoading ? "Validando…" : "Listo"}
         </button>
         {!isLast && (
           <button className="btn btn-ghost" onClick={onNext}>
@@ -440,10 +532,98 @@ function QuestCard({
 
       {photoData && (
         <div className="mt-3">
-          <img src={photoData} alt="Adjunto" className="w-full h-48 object-cover rounded-3xl" />
+          <img src={photoData} alt="Adjunto de misión" className="w-full h-48 object-cover rounded-3xl" />
         </div>
       )}
     </div>
+  );
+}
+
+function CompletionDialog({ lang, onTicket, onWhatsapp, onDownload }: { lang: "es" | "en"; onTicket: () => void; onWhatsapp: () => void; onDownload: () => void }) {
+  // focus management & escape to close to background
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    const first = document.getElementById('complete-title');
+    first?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        location.hash = '';
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      prev?.focus?.();
+    };
+  }, []);
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="complete-title">
+      <div className="absolute inset-0 bg-black/40" onClick={() => (location.hash = '')} aria-hidden />
+      <div className="relative card p-6 max-w-md w-full text-center">
+        <p id="complete-title" tabIndex={-1} className="font-display text-2xl mb-1">{COPY.alerts.complete[lang]}</p>
+        <p className="text-clay/70 mb-4">
+          {lang === "es"
+            ? "Tu siguiente paso - únete a quienes lo hicieron esta semana"
+            : "Your next step - join others who did this this week"}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <a href="#event" className="btn btn-ghost" onClick={onTicket}>
+            {lang === "es" ? "Conseguir boleto" : "Get Ticket"}
+          </a>
+          <a href={WHATSAPP_GRADUATES_LINK} target="_blank" rel="noreferrer" className="btn btn-amber" onClick={onWhatsapp}>
+            {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
+          </a>
+          <button className="btn btn-ghost" onClick={onDownload}>
+            {t(COPY.adventure.controls.download, lang)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewDialog({ lang, quests, showEnglish, onStart, onClose }: { lang: 'es' | 'en'; quests: Quest[]; showEnglish: boolean; onStart: () => void; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="relative card p-6 max-w-md w-full">
+        <h3 id="preview-title" className="font-display text-xl mb-2">{lang === 'es' ? 'Vista previa' : 'Preview'}</h3>
+        <ol className="space-y-2 list-decimal list-inside">
+          {quests.map((q) => (
+            <li key={q.id}>
+              {renderTextWithVocab(q.text.es, q.vocab)}
+              {showEnglish && <div className="text-sm text-clay/70">{q.text.en}</div>}
+            </li>
+          ))}
+        </ol>
+        <div className="mt-4 flex gap-2 justify-end">
+          <button className="btn btn-ghost" onClick={onClose}>{lang === 'es' ? 'Cerrar' : 'Close'}</button>
+          <button className="btn btn-amber" onClick={onStart}>{lang === 'es' ? 'Empezar ahora' : 'Start now'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AchievementsBar({ ids, lang }: { ids: string[]; lang: 'es' | 'en' }) {
+  if (!ids.length) return null;
+  const labels: Record<string, { es: string; en: string }> = {
+    first_quest: { es: 'Primera misión', en: 'First quest' },
+    adventure_complete: { es: 'Aventura completa', en: 'Adventure complete' }
+  };
+  return (
+    <ul className="flex flex-wrap gap-1" aria-label={lang === 'es' ? 'Logros' : 'Achievements'}>
+      {ids.map((id) => (
+        <li key={id} className="px-2 py-1 text-xs rounded-3xl border border-amber-200 bg-amber-50 text-amber-900">
+          {labels[id]?.[lang] ?? id}
+        </li>
+      ))}
+    </ul>
   );
 }
 

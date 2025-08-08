@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { fileURLToPath, URL } from "url";
+import { visualizer } from "rollup-plugin-visualizer";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react()],
@@ -13,7 +14,17 @@ export default defineConfig({
   build: {
     target: "es2020",
     cssMinify: true,
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      plugins: [
+        visualizer({
+          filename: "stats.html",
+          template: "treemap",
+          gzipSize: true,
+          brotliSize: true
+        })
+      ]
+    }
   }
 });
 

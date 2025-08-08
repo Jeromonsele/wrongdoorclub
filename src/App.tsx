@@ -27,10 +27,10 @@ export default function App() {
 
   return (
     <LangProvider>
-      <div className="bg-sunset" aria-hidden />
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:bg-white focus:text-clay focus:px-3 focus:py-2 focus:rounded-3xl focus:shadow-soft">Skip to content</a>
       <Confetti />
       <Header />
-      <main>
+      <main id="main" role="main" aria-label="Main content">
         <Suspense fallback={<div className="p-8">Loading…</div>}>
           {showEvent ? (
             <EventPanel />

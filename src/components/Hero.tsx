@@ -77,7 +77,7 @@ function HeroVisual() {
           loading="lazy"
         />
       ) : (
-        <div className="w-full h-full rounded-3xl shadow-soft bg-[conic-gradient(at_20%_20%,#FFF3C4,#FFD08A,#FFAF70,#FFF3C4)] animate-[spin_30s_linear_infinite]" />
+        <div className="w-full h-full rounded-3xl shadow-soft bg-[conic-gradient(at_20%_20%,#FFF3C4,#FFD08A,#FFAF70,#FFF3C4)]" />
       )}
     </figure>
   );
