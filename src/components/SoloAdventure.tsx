@@ -176,13 +176,13 @@ export function SoloAdventure() {
           onChange={(v) => setS({ ...s, neighborhood: v })}
           options={NEIGHBORHOODS as unknown as string[]}
         />
-        <Select
+        <TogglePills
           label={t(COPY.adventure.controls.vibe, lang)}
           value={s.vibe}
           onChange={(v) => setS({ ...s, vibe: v })}
           options={VIBES as unknown as string[]}
         />
-        <Select
+        <TogglePills
           label={t(COPY.adventure.controls.duration, lang)}
           value={String(s.duration)}
           onChange={(v) => setS({ ...s, duration: Number(v) })}
@@ -292,6 +292,30 @@ function Select(props: { label: string; value: string; onChange: (v: string) => 
         />
       </div>
     </label>
+  );
+}
+
+function TogglePills(props: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+  return (
+    <fieldset className="grid gap-1 text-sm">
+      <legend className="text-clay/70">{props.label}</legend>
+      <div className="flex flex-wrap gap-2">
+        {props.options.map((opt) => {
+          const selected = String(props.value) === String(opt);
+          return (
+            <button
+              key={opt}
+              type="button"
+              className={selected ? "btn btn-amber" : "btn btn-ghost"}
+              onClick={() => props.onChange(String(opt))}
+              aria-pressed={selected}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 
