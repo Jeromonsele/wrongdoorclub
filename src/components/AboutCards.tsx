@@ -4,11 +4,14 @@ import { THEME } from "@/theme";
 import { motion } from "framer-motion";
 import { Feather, DoorOpen, Smile } from "lucide-react";
 import { useLang } from "@/i18n";
+import { WHATSAPP_GRADUATES_LINK } from "@/data/social";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const ICONS = [Feather, DoorOpen, Smile];
 
 export function AboutCards() {
   const { lang } = useLang();
+  const { track } = useAnalytics();
   return (
     <section id="about" className={`${THEME.layout.padX} py-12 md:py-16`}>
       <div className={`${THEME.layout.maxW} mx-auto`}>
@@ -33,6 +36,17 @@ export function AboutCards() {
               </motion.div>
             );
           })}
+        </div>
+        <div className="mt-6">
+          <a
+            href={WHATSAPP_GRADUATES_LINK}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-amber"
+            onClick={() => track("whatsapp_join", { source: "about" })}
+          >
+            {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
+          </a>
         </div>
       </div>
     </section>

@@ -2,6 +2,7 @@
 import { COPY } from "@/copy";
 import { THEME, FEATURE_FLAGS } from "@/theme";
 import { useLang } from "@/i18n";
+import { WHATSAPP_GRADUATES_LINK } from "@/data/social";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -15,9 +16,14 @@ export function Footer() {
               <div className="font-display text-xl">{COPY.footer.membershipTeaserTitle[lang]}</div>
               <p className="text-clay/80">{COPY.footer.membershipTeaserBody[lang]}</p>
             </div>
-            <a className="btn btn-amber" href="#join-link">
-              {COPY.footer.joinCta[lang]}
-            </a>
+            <div className="flex gap-2">
+              <a className="btn btn-amber" href="#join-link">
+                {COPY.footer.joinCta[lang]}
+              </a>
+              <a className="btn btn-ghost" href={WHATSAPP_GRADUATES_LINK} target="_blank" rel="noreferrer">
+                {lang === "es" ? "WhatsApp" : "WhatsApp"}
+              </a>
+            </div>
           </div>
         )}
         <div className="text-center text-clay/70">
