@@ -3,36 +3,8 @@ import { COPY } from "@/copy";
 import { THEME } from "@/theme";
 import { Feather, DoorOpen, Smile } from "lucide-react";
 import { useLang } from "@/i18n";
-import { useState } from "react";
 
 const ICONS = [Feather, DoorOpen, Smile];
-
-const PHOTOS = [
-  { src: "/images/city-bridge.jpg", alt: "Sunlit bridge and domed building" },
-  { src: "/images/crosswalk-sun.jpg", alt: "Golden hour crosswalk" },
-  { src: "/images/cyclist-truck.jpg", alt: "Cyclist passing a truck" }
-];
-
-function PhotoTile({ src, alt }: { src: string; alt: string }) {
-  const [ok, setOk] = useState(true);
-  return (
-    <figure className="rounded-3xl shadow-soft border border-amber-100 bg-white overflow-hidden h-56 md:h-64">
-      {ok ? (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          className="w-full h-full object-cover"
-          onError={() => setOk(false)}
-        />
-      ) : (
-        <div className="w-full h-full grid place-items-center bg-gradient-to-br from-sun-1 via-sun-2 to-sun-3 text-clay/70 text-sm">
-          <span>Drop {src.replace("/images/", "")} into <code>/public/images/</code></span>
-        </div>
-      )}
-    </figure>
-  );
-}
 
 export function AboutCards() {
   const { lang } = useLang();
@@ -64,12 +36,7 @@ export function AboutCards() {
           </a>
         </div>
 
-        {/* Photo tiles with graceful fallback */}
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8">
-          {PHOTOS.map(p => (
-            <PhotoTile key={p.src} src={p.src} alt={p.alt} />
-          ))}
-        </div>
+        {/* Photo row removed until images are available to avoid empty placeholders */}
       </div>
     </section>
   );
