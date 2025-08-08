@@ -23,6 +23,7 @@ export function Header() {
           <a href="#about" className={linkClass}>{COPY.nav.about[lang]}</a>
           <a href="#adventure" className={linkClass}>{COPY.nav.adventure[lang]}</a>
           <a href="#join" className={linkClass}>{COPY.nav.join[lang]}</a>
+          <a href="#event" className={linkClass}>Tickets</a>
           <button
             className="ml-2 px-3 py-2 rounded-3xl border border-black/10 bg-white hover:bg-amber-50"
             aria-label="Language"
@@ -56,6 +57,7 @@ export function Header() {
             <a href="#about" className={linkClass} onClick={() => setOpen(false)}>{COPY.nav.about[lang]}</a>
             <a href="#adventure" className={linkClass} onClick={() => setOpen(false)}>{COPY.nav.adventure[lang]}</a>
             <a href="#join" className={linkClass} onClick={() => setOpen(false)}>{COPY.nav.join[lang]}</a>
+            <a href="#event" className={linkClass} onClick={() => setOpen(false)}>Tickets</a>
           </div>
         </div>
       )}
