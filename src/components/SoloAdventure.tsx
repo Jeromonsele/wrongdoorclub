@@ -241,7 +241,11 @@ export function SoloAdventure() {
             <div className="absolute inset-0 bg-black/40" />
             <div className="relative card p-6 max-w-md w-full text-center">
               <p className="font-display text-2xl mb-1">{COPY.alerts.complete[lang]}</p>
-              <p className="text-clay/70 mb-4">{lang === "es" ? "Celebra y da el siguiente paso" : "Celebrate and take the next step"}</p>
+              <p className="text-clay/70 mb-4">
+                {lang === "es"
+                  ? "Tu siguiente paso - únete a quienes lo hicieron esta semana"
+                  : "Your next step - join others who did this this week"}
+              </p>
               <div className="flex flex-wrap justify-center gap-2">
                 <a href="#event" className="btn btn-ghost" onClick={() => track("ticket_click", { source: "adventure_complete_sheet" })}>
                   {lang === "es" ? "Conseguir boleto" : "Get Ticket"}
@@ -249,6 +253,9 @@ export function SoloAdventure() {
                 <a href={WHATSAPP_GRADUATES_LINK} target="_blank" rel="noreferrer" className="btn btn-amber" onClick={() => track("whatsapp_join", { source: "adventure_complete_sheet" })}>
                   {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
                 </a>
+                <button className="btn btn-ghost" onClick={downloadBadge}>
+                  {t(COPY.adventure.controls.download, lang)}
+                </button>
               </div>
             </div>
           </div>
