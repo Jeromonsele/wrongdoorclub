@@ -7,9 +7,10 @@ import { Footer } from "@/components/Footer";
 import { Confetti } from "@/components/Confetti";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { LangProvider } from "@/i18n";
-import { useEffect, useState } from "react";
-import { EventPanel } from "@/components/EventPanel";
-import { SuccessPanel } from "@/components/SuccessPanel";
+import { lazy, Suspense, useEffect, useState } from "react";
+const EventPanel = lazy(() => import("@/components/EventPanel").then(m => ({ default: m.EventPanel })));
+const SuccessPanel = lazy(() => import("@/components/SuccessPanel").then(m => ({ default: m.SuccessPanel })));
+const QrPanel = lazy(() => import("@/components/QrPanel").then(m => ({ default: m.QrPanel })));
 
 export default function App() {
   useAnalytics();
@@ -31,18 +32,22 @@ export default function App() {
       <Confetti />
       <Header />
       <main>
-        {showEvent ? (
-          <EventPanel />
-        ) : showSuccess ? (
-          <SuccessPanel />
-        ) : (
-          <>
-            <Hero />
-            <AboutCards />
-            <Gallery />
-            <AdventureCard />
-          </>
-        )}
+        <Suspense fallback={<div className="p-8">Loading…</div>}>
+          {showEvent ? (
+            <EventPanel />
+          ) : showSuccess ? (
+            <SuccessPanel />
+          ) : route.startsWith("qr") ? (
+            <QrPanel />
+          ) : (
+            <>
+              <Hero />
+              <AboutCards />
+              <Gallery />
+              <AdventureCard />
+            </>
+          )}
+        </Suspense>
       </main>
       <Footer />
     </LangProvider>
