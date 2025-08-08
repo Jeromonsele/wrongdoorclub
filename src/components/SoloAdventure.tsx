@@ -5,7 +5,7 @@ import { EXPANSION_PACKS, SEED_PACK, Quest } from "@/data/quests";
 import { load, save } from "@/utils/storage";
 import { wallClockCountdown, now } from "@/utils/timers";
 import { COPY } from "@/copy";
-import { Compass, Clock, RefreshCw, Check, Image as ImageIcon, MapPin, Download, ChevronRight } from "lucide-react";
+import { Compass, Clock, RefreshCw, Check, Image as ImageIcon, MapPin, Download, ChevronRight, ChevronDown } from "lucide-react";
 import clsx from "clsx";
 import { useLang, t } from "@/i18n";
 import { VocabHint } from "./VocabHint";
@@ -170,36 +170,24 @@ export function SoloAdventure() {
   return (
     <div className="grid gap-4">
       <div className="grid sm:grid-cols-3 gap-3">
-        <label className="field">
-          <span className="field-label">{t(COPY.adventure.controls.neighborhood, lang)}</span>
-          <select
-            className="select"
-            value={s.neighborhood}
-            onChange={(e) => setS({ ...s, neighborhood: e.target.value })}
-          >
-            {(NEIGHBORHOODS as unknown as string[]).map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </label>
-        <label className="field">
-          <span className="field-label">{t(COPY.adventure.controls.vibe, lang)}</span>
-          <select
-            className="select"
-            value={s.vibe}
-            onChange={(e) => setS({ ...s, vibe: e.target.value })}
-          >
-            {(VIBES as unknown as string[]).map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
-        </label>
-        <label className="field">
-          <span className="field-label">{t(COPY.adventure.controls.duration, lang)}</span>
-          <select
-            className="select"
-            value={String(s.duration)}
-            onChange={(e) => setS({ ...s, duration: Number(e.target.value) })}
-          >
-            {["30","45","60","90"].map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </label>
+        <Select
+          label={t(COPY.adventure.controls.neighborhood, lang)}
+          value={s.neighborhood}
+          onChange={(v) => setS({ ...s, neighborhood: v })}
+          options={NEIGHBORHOODS as unknown as string[]}
+        />
+        <Select
+          label={t(COPY.adventure.controls.vibe, lang)}
+          value={s.vibe}
+          onChange={(v) => setS({ ...s, vibe: v })}
+          options={VIBES as unknown as string[]}
+        />
+        <Select
+          label={t(COPY.adventure.controls.duration, lang)}
+          value={String(s.duration)}
+          onChange={(v) => setS({ ...s, duration: Number(v) })}
+          options={["30","45","60","90"]}
+        />
       </div>
 
       <div className="flex gap-2">
@@ -288,13 +276,21 @@ function Select(props: { label: string; value: string; onChange: (v: string) => 
   return (
     <label className="grid gap-1 text-sm">
       <span className="text-clay/70">{props.label}</span>
-      <select
-        className="rounded-xl2 border border-black/10 bg-white px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
-      >
-        {props.options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
+      <div className="relative">
+        <select
+          className="form-select w-full"
+          value={props.value}
+          onChange={(e) => props.onChange(e.target.value)}
+        >
+          {props.options.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
+        <ChevronDown
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-clay/50"
+          aria-hidden="true"
+        />
+      </div>
     </label>
   );
 }

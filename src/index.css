@@ -11,6 +11,12 @@ html.reduced-motion * {
   transition: none !important;
 }
 
+@layer components {
+  .form-select {
+    @apply appearance-none rounded-3xl border border-amber-100 bg-white/90 backdrop-blur px-3 pr-9 py-2 text-base leading-tight shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 cursor-pointer;
+  }
+}
+
 body { @apply bg-cream text-clay; }
 
 .btn {
