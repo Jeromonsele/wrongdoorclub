@@ -1,37 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#FF9C0A" />
     <title>The Wrong Door Club</title>
 
-    <!-- PWA -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/icon-192.png" sizes="192x192" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-    <!-- Fonts: local-name fallback, swap behavior -->
+    <!-- Self host fonts later if you want. Using local fallbacks with swap keeps CLS low. -->
     <style>
-      @font-face {
-        font-family: "Inter";
-        src: local("Inter");
-        font-display: swap;
-      }
-      @font-face {
-        font-family: "Cabinet Grotesk";
-        src: local("Cabinet Grotesk");
-        font-display: swap;
-      }
-      :root {
-        color-scheme: light;
-      }
+      @font-face { font-family: "Inter"; src: local("Inter"); font-display: swap; }
+      @font-face { font-family: "Cabinet Grotesk"; src: local("Cabinet Grotesk"); font-display: swap; }
     </style>
 
-    <!-- Base CSS -->
     <link rel="preload" href="/src/index.css" as="style" />
     <link rel="stylesheet" href="/src/index.css" />
   </head>
@@ -39,5 +23,5 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
-  </html>
+</html>
 

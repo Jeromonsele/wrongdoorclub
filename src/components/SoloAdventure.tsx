@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// src/components/SoloAdventure.tsx
+import { useEffect, useMemo, useState } from "react";
 import { VENUES, NEIGHBORHOODS, VIBES } from "@/data/venues";
 import { EXPANSION_PACKS, SEED_PACK, Quest } from "@/data/quests";
 import { load, save } from "@/utils/storage";
 import { wallClockCountdown, now } from "@/utils/timers";
 import { COPY } from "@/copy";
-import { Compass, Clock, RefreshCw, Check, Image as ImageIcon, MapPin, Download } from "lucide-react";
-import { motion } from "framer-motion";
+import { Compass, Clock, RefreshCw, Check, Image as ImageIcon, MapPin, Download, ChevronRight } from "lucide-react";
 import clsx from "clsx";
+import { useLang, t } from "@/i18n";
+import { VocabHint } from "./VocabHint";
+import { AudioButton } from "./AudioButton";
 
 type State = {
   neighborhood: string;
@@ -18,6 +21,7 @@ type State = {
   endTs?: number;
   photos: Record<string, string>; // questId -> base64
   history: string[];
+  showEnglish: boolean;
 };
 
 const KEY = "wdf_adventure_state";
@@ -29,7 +33,8 @@ const DEFAULT: State = {
   idx: 0,
   doneIds: [],
   photos: {},
-  history: []
+  history: [],
+  showEnglish: false
 };
 
 const getActivePacks = () => {
@@ -45,6 +50,7 @@ function pickQuests(count: number): Quest[] {
 }
 
 export function SoloAdventure() {
+  const { lang } = useLang();
   const [s, setS] = useState<State>(() => ({ ...DEFAULT, ...load<State>(KEY, DEFAULT) }));
   const [cameraBlocked, setCameraBlocked] = useState(false);
   const [locationBlocked, setLocationBlocked] = useState(false);
@@ -75,7 +81,7 @@ export function SoloAdventure() {
     const count = Math.min(5, Math.max(3, Math.round(s.duration / 20)));
     const quests = pickQuests(count);
     const endTs = now() + s.duration * 60 * 1000;
-    setS({ ...s, quests, idx: 0, doneIds: [], photos: {}, endTs, history: [`Started ${new Date().toLocaleTimeString()}`] });
+    setS({ ...s, quests, idx: 0, doneIds: [], photos: {}, endTs, history: [`Start ${new Date().toLocaleTimeString()}`] });
   }
 
   function next() {
@@ -85,7 +91,7 @@ export function SoloAdventure() {
   function markDone(id: string) {
     if (!s.doneIds.includes(id)) {
       const doneIds = [...s.doneIds, id];
-      const history = [...s.history, `Finished ${id} at ${new Date().toLocaleTimeString()}`];
+      const history = [...s.history, `Finish ${id} ${new Date().toLocaleTimeString()}`];
       setS({ ...s, doneIds, history });
       // Confetti event via custom dispatch
       document.dispatchEvent(new CustomEvent("confetti"));
@@ -154,19 +160,19 @@ export function SoloAdventure() {
     <div className="grid gap-4">
       <div className="grid sm:grid-cols-3 gap-3">
         <Select
-          label={COPY.adventure.controls.neighborhood}
+          label={t(COPY.adventure.controls.neighborhood, lang)}
           value={s.neighborhood}
           onChange={v => setS({ ...s, neighborhood: v })}
           options={NEIGHBORHOODS as unknown as string[]}
         />
         <Select
-          label={COPY.adventure.controls.vibe}
+          label={t(COPY.adventure.controls.vibe, lang)}
           value={s.vibe}
           onChange={v => setS({ ...s, vibe: v })}
           options={VIBES as unknown as string[]}
         />
         <Select
-          label={COPY.adventure.controls.duration}
+          label={t(COPY.adventure.controls.duration, lang)}
           value={String(s.duration)}
           onChange={v => setS({ ...s, duration: Number(v) })}
           options={["30", "45", "60", "90"]}
@@ -176,12 +182,18 @@ export function SoloAdventure() {
       <div className="flex gap-2">
         <button className="btn btn-amber" onClick={generate}>
           <Compass className="size-5" />
-          {COPY.adventure.controls.start}
+          {t(COPY.adventure.controls.start, lang)}
         </button>
         <a href={nearbyUrl()} target="_blank" rel="noreferrer" className="btn btn-ghost">
           <MapPin className="size-5" />
-          {COPY.adventure.controls.nearby}
+          {t(COPY.adventure.controls.nearby, lang)}
         </a>
+        <button
+          className="ml-auto btn btn-ghost text-sm"
+          onClick={() => setS({ ...s, showEnglish: !s.showEnglish })}
+        >
+          {s.showEnglish ? t(COPY.adventure.controls.hideEnglish, lang) : t(COPY.adventure.controls.showEnglish, lang)}
+        </button>
       </div>
 
       {s.quests.length > 0 && (
@@ -195,35 +207,29 @@ export function SoloAdventure() {
           </div>
 
           <QuestCard
-            key={current?.id ?? "none"}
             quest={current}
-            photoData={current?.id ? s.photos[current.id] : undefined}
-            onAttach={(f) => {
-              if (!current) return;
-              attachPhoto(current.id, f);
-            }}
+            showEnglish={s.showEnglish}
+            nextLabel={s.quests[s.idx + 1]?.text.es}
+            onAttach={(id, f) => attachPhoto(id, f)}
             onReroll={reroll}
-            onDone={async () => {
-              if (!current) return;
-              const ok = await checkGPS(current);
-              if (ok) markDone(current.id);
-            }}
+            onDone={async (id) => { const ok = await checkGPS(current); if (ok) markDone(id); }}
             onNext={next}
             isLast={s.idx === s.quests.length - 1}
+            photos={s.photos}
           />
 
           <div className="flex flex-wrap gap-2">
             <button className="btn btn-ghost" onClick={downloadBadge}>
               <Download className="size-5" />
-              {COPY.adventure.controls.download}
+              {t(COPY.adventure.controls.download, lang)}
             </button>
           </div>
 
           {cameraBlocked && (
-            <Alert>{COPY.alerts.cameraBlocked}</Alert>
+            <Alert label={t(COPY.alerts.cameraBlocked, lang)} />
           )}
           {locationBlocked && (
-            <Alert>{COPY.alerts.locationBlocked}</Alert>
+            <Alert label={t(COPY.alerts.locationBlocked, lang)} />
           )}
         </div>
       )}
@@ -258,50 +264,82 @@ function Progress({ total, done }: { total: number; done: number }) {
   );
 }
 
-function Alert({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-xl2 bg-amber-50 text-amber-900 px-3 py-2">{children}</div>;
+function Alert({ label }: { label: string }) {
+  return <div className="rounded-3xl bg-amber-50 text-amber-900 px-3 py-2">{label}</div>;
+}
+
+function renderTextWithVocab(text: string, vocab?: { word: string; hint: string }[]) {
+  if (!vocab || vocab.length === 0) return <span className="text-lg">{text}</span>;
+  let result: React.ReactNode[] = [];
+  let remaining = text;
+  vocab.forEach(({ word, hint }, i) => {
+    const idx = remaining.toLowerCase().indexOf(word.toLowerCase());
+    if (idx >= 0) {
+      const before = remaining.slice(0, idx);
+      const after = remaining.slice(idx + word.length);
+      result.push(<span key={`before-${i}`}>{before}</span>);
+      result.push(<VocabHint key={`v-${i}`} word={remaining.substr(idx, word.length)} hint={hint} />);
+      remaining = after;
+    }
+  });
+  result.push(<span key="last">{remaining}</span>);
+  return <span className="text-lg">{result}</span>;
 }
 
 function QuestCard({
   quest,
-  onReroll,
-  onDone,
-  onNext,
+  showEnglish,
+  nextLabel,
   isLast,
+  onReroll,
+  onNext,
+  onDone,
   onAttach,
-  photoData
+  photos
 }: {
   quest?: Quest;
-  onReroll: () => void;
-  onDone: () => void | Promise<void>;
-  onNext: () => void;
+  showEnglish: boolean;
+  nextLabel?: string;
   isLast: boolean;
-  onAttach: (file: File) => void;
-  photoData?: string;
+  onReroll: () => void;
+  onNext: () => void;
+  onDone: (id: string) => void | Promise<void>;
+  onAttach: (id: string, f: File) => void;
+  photos: Record<string, string>;
 }) {
   if (!quest) return null;
+  const photoData = photos[quest.id];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6, scale: 0.99 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="card p-4"
-    >
+    <div className="card p-5">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm uppercase tracking-wide text-clay/60">{quest.type}</div>
+        <div className="kicker">{quest.type}</div>
         <div className="flex gap-2">
-          <button className="btn btn-ghost text-sm" onClick={onReroll} aria-label="Reroll quest">
+          <AudioButton text={quest.text.es} />
+          <button className="btn btn-ghost text-sm" onClick={onReroll} aria-label="Reroll">
             <RefreshCw className="size-4" />
-            {COPY.adventure.controls.reroll}
+            Cambiar
           </button>
         </div>
       </div>
-      <p className="text-lg">{quest.text}</p>
+
+      <div className="space-y-2">
+        {renderTextWithVocab(quest.text.es, quest.vocab)}
+        {showEnglish && <p className="text-clay/70">{quest.text.en}</p>}
+      </div>
+
+      {nextLabel && (
+        <div className="mt-3 text-sm text-clay/70 flex items-center gap-1">
+          <ChevronRight className="size-4" />
+          <span>Siguiente: {nextLabel}</span>
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-2">
         {quest.photo && (
           <label className="btn btn-ghost cursor-pointer">
             <ImageIcon className="size-5" />
-            {COPY.adventure.controls.attach}
+            Adjuntar foto
             <input
               type="file"
               accept="image/*"
@@ -310,31 +348,28 @@ function QuestCard({
               onChange={(e) => {
                 const f = e.currentTarget.files?.[0];
                 if (!f) return;
-                if (!navigator.mediaDevices) {
-                  // graceful fallback
-                }
-                onAttach(f);
+                onAttach(quest.id, f);
               }}
             />
           </label>
         )}
-        <button className="btn btn-amber" onClick={() => void onDone()}>
+        <button className="btn btn-amber" onClick={() => void onDone(quest.id)}>
           <Check className="size-5" />
-          {COPY.adventure.controls.done}
+          Listo
         </button>
         {!isLast && (
           <button className="btn btn-ghost" onClick={onNext}>
-            {COPY.adventure.controls.next}
+            Siguiente
           </button>
         )}
       </div>
 
       {photoData && (
         <div className="mt-3">
-          <img src={photoData} alt="Attached quest" className="w-full h-48 object-cover rounded-xl2" />
+          <img src={photoData} alt="Adjunto" className="w-full h-48 object-cover rounded-3xl" />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
