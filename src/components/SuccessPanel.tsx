@@ -2,6 +2,7 @@ import { THEME } from "@/theme";
 import { useLang } from "@/i18n";
 import { WHATSAPP_GRADUATES_LINK } from "@/data/social";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { buildICS } from "@/utils/ics";
 
 export function SuccessPanel() {
   const { lang } = useLang();
@@ -27,6 +28,26 @@ export function SuccessPanel() {
             >
               {lang === "es" ? "Entrar a WhatsApp" : "Join WhatsApp"}
             </a>
+            <button
+              className="btn btn-ghost ml-2"
+              onClick={() => {
+                const ics = buildICS({
+                  title: lang === "es" ? "Encuentro de Egresados" : "Adventure Graduates Meetup",
+                  startISO: new Date().toISOString(),
+                  durationMin: 120,
+                  description: "Adventure Graduates Meetup",
+                  location: "Roma Norte, CDMX"
+                });
+                const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "wrong-door-event.ics";
+                a.click();
+                URL.revokeObjectURL(a.href);
+              }}
+            >
+              {lang === "es" ? "Agregar al calendario" : "Add to calendar"}
+            </button>
           </div>
         </div>
 

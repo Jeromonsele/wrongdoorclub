@@ -3,6 +3,7 @@ import { THEME } from "@/theme";
 import { TEST_EVENT } from "@/data/events";
 import { useLang } from "@/i18n";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { buildICS } from "@/utils/ics";
 
 function useCountdown(whenISO: string) {
   const [now, setNow] = useState(() => Date.now());
@@ -50,6 +51,26 @@ export function EventPanel() {
             >
               {lang === "es" ? "Conseguir boleto" : "Get Ticket"} • {TEST_EVENT.priceLabel[lang]}
             </a>
+            <button
+              className="btn btn-ghost"
+              onClick={() => {
+                const ics = buildICS({
+                  title: TEST_EVENT.title[lang],
+                  startISO: TEST_EVENT.whenISO,
+                  durationMin: 120,
+                  description: "Adventure Graduates Meetup",
+                  location: TEST_EVENT.where[lang]
+                });
+                const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "wrong-door-event.ics";
+                a.click();
+                URL.revokeObjectURL(a.href);
+              }}
+            >
+              {lang === "es" ? "Agregar al calendario" : "Add to calendar"}
+            </button>
             <a href="#success" className="btn btn-ghost">
               {lang === "es" ? "Ya compré" : "I already bought"}
             </a>
