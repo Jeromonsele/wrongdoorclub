@@ -348,7 +348,7 @@ export function SoloAdventure() {
 
   return (
     <div className="grid gap-4">
-      <div className="grid sm:grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
         <Select
           label={t(COPY.adventure.controls.neighborhood, lang)}
           value={s.neighborhood}
@@ -369,7 +369,7 @@ export function SoloAdventure() {
         />
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap justify-center sm:justify-start">
         <button className={clsx("btn btn-amber", isGenerating && "opacity-70 cursor-not-allowed")}
           onClick={generate} disabled={isGenerating} aria-busy={isGenerating}>
           {isGenerating ? <Loader2 className="size-5 animate-spin" /> : <Compass className="size-5" />}

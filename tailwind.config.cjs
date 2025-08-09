@@ -3,6 +3,21 @@ module.exports = {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+        '3xl': '1920px',
+        '4xl': '2560px',
+      },
+      container: {
+        center: true,
+        padding: {
+          DEFAULT: '1rem',
+          sm: '2rem',
+          lg: '4rem',
+          xl: '5rem',
+          '2xl': '6rem',
+        },
+      },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "Arial"],
         display: ["Cabinet Grotesk", "Inter", "ui-sans-serif", "system-ui"]
