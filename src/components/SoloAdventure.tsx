@@ -348,7 +348,7 @@ export function SoloAdventure() {
 
   return (
     <div className="grid gap-4">
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-3 gap-2 sm:gap-3">
         <Select
           label={t(COPY.adventure.controls.neighborhood, lang)}
           value={s.neighborhood}
@@ -369,7 +369,7 @@ export function SoloAdventure() {
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button className={clsx("btn btn-amber", isGenerating && "opacity-70 cursor-not-allowed")}
           onClick={generate} disabled={isGenerating} aria-busy={isGenerating}>
           {isGenerating ? <Loader2 className="size-5 animate-spin" /> : <Compass className="size-5" />}
@@ -455,7 +455,7 @@ export function SoloAdventure() {
       )}
 
       {isGenerating && (
-        <div className="card p-5 animate-pulse">
+        <div className="card p-4 sm:p-5 animate-pulse">
           <div className="flex items-center justify-between mb-3">
             <div className="h-3 w-24 bg-black/10 rounded" />
             <div className="h-8 w-28 bg-black/10 rounded-3xl" />
@@ -488,7 +488,7 @@ function Select(props: { label: string; value: string; onChange: (v: string) => 
       <span className="text-clay/70">{props.label}</span>
       <div className="relative">
         <select
-          className="form-select w-full"
+          className="form-select w-full text-fluid-sm"
           value={props.value}
           onChange={(e) => props.onChange(e.target.value)}
         >

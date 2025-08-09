@@ -14,10 +14,10 @@ export function AdventureCard() {
   const { lang } = useLang();
 
   return (
-    <section id="adventure" className={`${THEME.layout.padX} py-12 md:py-16`}>
-      <div className={`${THEME.layout.maxW} mx-auto grid lg:grid-cols-[2fr,1fr] gap-6 items-start`}>
+    <section id="adventure" className={`${THEME.layout.padX} py-10 md:py-16`}>
+      <div className={`${THEME.layout.maxW} mx-auto grid gap-6 items-start lg:grid-cols-[minmax(0,2fr),minmax(0,1fr)]`}>
         {/* Runner */}
-        <div className="card p-5">
+        <div className="card p-4 sm:p-5">
           <h2 className="font-display text-2xl mb-2">
             {COPY.adventure.title[lang]}
           </h2>
@@ -27,7 +27,7 @@ export function AdventureCard() {
         {/* Side rail */}
         <div className="flex flex-col gap-4">
           <button
-            className="card p-4 text-left flex items-center justify-between"
+            className="card p-3 sm:p-4 text-left flex items-center justify-between"
             onClick={() => setPacksOpen(v => !v)}
             aria-expanded={packsOpen}
             aria-controls="packs"
@@ -44,7 +44,7 @@ export function AdventureCard() {
           </button>
 
           {packsOpen && (
-            <div id="packs" className="card p-4">
+            <div id="packs" className="card p-3 sm:p-4">
               <PackToggles />
             </div>
           )}
