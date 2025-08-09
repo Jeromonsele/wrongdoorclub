@@ -14,7 +14,7 @@ export function Hero() {
   const [streak, setStreak] = useState(0);
   useEffect(() => { setStreak(getStreak().current); }, []);
   return (
-    <section id="top" className={`${THEME.layout.padX} pt-10 md:pt-14`}>
+    <section id="top" className={`${THEME.layout.padX} pt-safe-top pt-8 md:pt-14`}>
       <div className={`${THEME.layout.maxW} mx-auto grid gap-6`}>
         <div className="flex flex-col gap-4">
           <h1 className="font-display text-4xl md:text-6xl leading-tight">

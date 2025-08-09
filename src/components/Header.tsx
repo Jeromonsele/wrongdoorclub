@@ -12,7 +12,7 @@ export function Header() {
   const linkClass = "px-3 py-2 rounded-3xl hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300";
 
   return (
-    <header className={clsx("sticky top-0 z-40", THEME.colors.bg, THEME.layout.padX, "backdrop-blur bg-cream/85")}>
+    <header className={clsx("sticky top-0 z-40 pt-safe-top", THEME.colors.bg, THEME.layout.padX, "backdrop-blur bg-cream/85")}> 
       <div className={clsx("mx-auto", THEME.layout.maxW, "flex items-center justify-between h-16")}> 
         <a href="#top" className="flex items-center gap-2 font-display text-lg">
           <Sparkles className="size-5 text-amber-500" aria-hidden />

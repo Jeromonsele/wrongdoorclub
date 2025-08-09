@@ -6,6 +6,8 @@
 
 * { -webkit-tap-highlight-color: transparent; }
 
+html, body { height: 100%; overscroll-behavior-y: contain; }
+
 html.reduced-motion * {
   animation: none !important;
   transition: none !important;
@@ -33,4 +35,8 @@ body { @apply bg-cream text-clay; }
 /* Vocab hint styling */
 .vocab { @apply px-1.5 py-0.5 rounded-xl bg-amber-100 text-amber-900 cursor-pointer; }
 .vocab-tooltip { @apply text-sm bg-black text-white px-2 py-1 rounded-xl shadow-lg; }
+
+/* Safe area utilities for iOS */
+.pt-safe-top { padding-top: env(safe-area-inset-top); }
+.pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 

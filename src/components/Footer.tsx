@@ -10,7 +10,7 @@ export function Footer() {
   const { lang } = useLang();
   const { track } = useAnalytics();
   return (
-    <footer id="join" className={`${THEME.layout.padX} py-12`}>
+    <footer id="join" className={`${THEME.layout.padX} py-12 pb-safe-bottom`}>
       <div className={`${THEME.layout.maxW} mx-auto grid gap-6`}>
         {FEATURE_FLAGS.membershipTeaser && (
           <div className="card p-5 flex items-start justify-between gap-4">
